@@ -1,5 +1,6 @@
 package com.github.knightwood.gradle.plugin.extensions
 
+import com.android.build.gradle.options.parseBoolean
 import org.gradle.api.Action
 import javax.inject.Inject
 import org.gradle.api.InvalidUserDataException
@@ -8,6 +9,7 @@ import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Optional
 import org.jetbrains.compose.desktop.application.dsl.JvmApplicationDistributions
 
 /**
@@ -105,16 +107,16 @@ abstract class VariantExtensions @Inject constructor(
                 "activeVariant is not configured, set it like: activeVariant.set(\"debug\") or activeVariant.set(\"debug-free\")"
             )
         // 构建变体命名规则为 "buildType-flavor"，flavor 可以省略
-        val buildTypeName = variantName.substringBefore(VARIANT_SEPARATOR)
-        val flavorName = variantName.substringAfter(VARIANT_SEPARATOR, "").ifEmpty { null }
+        val parsedBuildTypeName = variantName.substringBefore(VARIANT_SEPARATOR)
+        val parsedFlavorName = variantName.substringAfter(VARIANT_SEPARATOR, "").ifEmpty { null }
 
-        val builtType = with(buildTypeCollectionExtension) {
-            parseBuilder(buildTypeName) ?: run {
-                logger.warn("buildType $buildTypeName not found, fallback to debug buildType")
+        val builtTypeBuilder = with(buildTypeCollectionExtension) {
+            parseBuilder(parsedBuildTypeName) ?: run {
+                logger.warn("buildType $parsedBuildTypeName not found, fallback to debug buildType")
                 parseBuilderByIsDebug(true)
             }
         }
-        val flavor = flavorName?.let { name ->
+        val flavorBuilder = parsedFlavorName?.let { name ->
             flavorCollectionExtension.parseBuilder(name) ?: run {
                 project.logger.warn("flavor $name not found, only buildType configuration is applied")
                 null
@@ -123,29 +125,31 @@ abstract class VariantExtensions @Inject constructor(
 
         //合并配置，优先级：flavor > buildType
         mergedConfiguration.apply {
-            debug.set(builtType.debug)
-            this.buildTypeName.set(builtType.name)
-            this.flavorName.set(flavor?.name)
+            this.debug.set(builtTypeBuilder.debug)
+            this.buildTypeName.set(parsedBuildTypeName)
+            if (parsedFlavorName != null) {
+                this.flavorName.set(parsedFlavorName)
+            }
 
             //先写入buildType，再写入flavor，后写入的已配置项覆盖先写入的
-            builtType.distributionInfoBuilder.mergeTo(distributionInfo)
-            flavor?.let {
+            builtTypeBuilder.distributionInfoBuilder.mergeTo(distributionInfo)
+            flavorBuilder?.let {
                 if (it.distributionInfoBuilderExtensionIsSet) {
                     it.distributionInfoBuilder.mergeTo(distributionInfo)
                 }
             }
 
-            builtType.sourceSetBuilder.mergeTo(customSourceSets)
-            flavor?.let {
+            builtTypeBuilder.sourceSetBuilder.mergeTo(customSourceSets)
+            flavorBuilder?.let {
                 if (it.sourceSetBuilderExtensionIsSet) {
                     it.sourceSetBuilder.mergeTo(customSourceSets)
                 }
             }
 
-            builtType.buildConfigBuilder.mergeTo(buildConfigFields)
-            buildConfigPackageName.set(builtType.buildConfigBuilder.packageName)
-            buildConfigClassName.set(builtType.buildConfigBuilder.className)
-            flavor?.let {
+            builtTypeBuilder.buildConfigBuilder.mergeTo(buildConfigFields)
+            buildConfigPackageName.set(builtTypeBuilder.buildConfigBuilder.packageName)
+            buildConfigClassName.set(builtTypeBuilder.buildConfigBuilder.className)
+            flavorBuilder?.let {
                 if (it.buildConfigBuilderExtensionIsSet) {
                     it.buildConfigBuilder.mergeTo(buildConfigFields)
                     buildConfigPackageName.set(it.buildConfigBuilder.packageName)
@@ -175,7 +179,8 @@ abstract class MergedVariantExtension : ExtensionAware {
 
     abstract val debug: Property<Boolean>
     abstract val buildTypeName: Property<String>
-    abstract val flavorName: Property<String?>
+    @get:Optional
+    abstract val flavorName: Property<String>
     val distributionInfo: DistributionInfoBuilderExtension =
         objects.newInstance(DistributionInfoBuilderExtension::class.java)
     val customSourceSets = objects.domainObjectContainer<CustomSourceSet>(CustomSourceSet::class.java)

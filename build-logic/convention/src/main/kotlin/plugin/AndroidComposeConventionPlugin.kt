@@ -17,6 +17,8 @@
 
 package plugin
 
+import com.kiylx.common.logic.configAndroidApplication
+import com.kiylx.common.logic.configAndroidLibrary
 import com.kiylx.common.logic.configureAndroidCompose
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -29,8 +31,12 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
             with(pluginManager) {
                 apply("org.jetbrains.kotlin.plugin.compose")
             }
-            parseLibraryOrApp2GetExtension {
-                that.configureAndroidCompose(this,it)
+            configAndroidApplication {
+                that.configureAndroidCompose(this)
+            }
+
+            configAndroidLibrary {
+                that.configureAndroidCompose(this)
             }
         }
     }

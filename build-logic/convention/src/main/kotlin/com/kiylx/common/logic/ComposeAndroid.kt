@@ -17,7 +17,9 @@
 
 package com.kiylx.common.logic
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.assign
@@ -26,22 +28,40 @@ import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 
 internal fun Project.configureAndroidCompose(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
-    isLibrary: Boolean,
+    commonExtension: CommonExtension,
 ) {
-    commonExtension.apply {
-        buildFeatures {
-            compose = true
-        }
-        packaging {
-            resources {
-                excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    if (commonExtension is ApplicationExtension) {
+        commonExtension.apply {
+            buildFeatures {
+                compose = true
+            }
+            packaging {
+                resources {
+                    excludes += "/META-INF/{AL2.0,LGPL2.1}"
+                }
+            }
+            testOptions {
+                unitTests {
+                    // For Robolectric
+                    isIncludeAndroidResources = true
+                }
             }
         }
-        testOptions {
-            unitTests {
-                // For Robolectric
-                isIncludeAndroidResources = true
+    } else if (commonExtension is LibraryExtension) {
+        commonExtension.apply {
+            buildFeatures {
+                compose = true
+            }
+            packaging {
+                resources {
+                    excludes += "/META-INF/{AL2.0,LGPL2.1}"
+                }
+            }
+            testOptions {
+                unitTests {
+                    // For Robolectric
+                    isIncludeAndroidResources = true
+                }
             }
         }
     }
@@ -59,16 +79,20 @@ internal fun Project.configureAndroidCompose(
         project.providers.gradleProperty("enableComposeCompilerReports").onlyIfTrue()
             .relativeToRootProject("compose-reports")
             .let(reportsDestination::set)
-        stabilityConfigurationFile =
+        stabilityConfigurationFiles .addAll(
             rootProject.layout.projectDirectory.file("compose_compiler_config.conf")
-
-        enableStrongSkippingMode = true
+        )
+        // 强跳默认启用，所以不用设置了
+        // enableStrongSkippingMode = true  //写法改为下面
+//        featureFlags = setOf(ComposeFeatureFlag.Companion.StrongSkipping)
     }
 }
 
 internal fun Project.configComposeModuleDeps() {
+    val that = this
     dependencies {
-        val bom ="2024.12.01"
+        val composeBomVersion = that.outerLibs.findVersion("bom").get()
+        val bom = composeBomVersion.requiredVersion
         val composeBom = platform("androidx.compose:compose-bom:${bom}")
         implementationDeps(composeBom)
         androidTestImplementationDeps(composeBom)

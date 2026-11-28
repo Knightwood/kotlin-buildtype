@@ -17,6 +17,16 @@
 
 package com.kiylx.common.logic
 
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.LibraryExtension
+import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.kotlin.dsl.getByType
+
+val Project.outerLibs
+    get(): VersionCatalog = extensions.getByType<VersionCatalogsExtension>()
+        .named("libs")
 
 val implementationDeps: String
     get() = "implementation"
@@ -35,3 +45,17 @@ val apiDeps: String get() = "api"
 val debugImplementationDeps: String get() = "debugImplementation"
 
 val androidTestImplementationDeps: String get() = "androidTestImplementation"
+
+val Project.isAndroidLibrary get() = pluginManager.hasPlugin("com.android.library")
+
+fun Project.configAndroidApplication(action: ApplicationExtension.() -> Unit) {
+    val isLibrary: Boolean = pluginManager.hasPlugin("com.android.library")
+    if (isLibrary) return
+    extensions.getByType<ApplicationExtension>().apply(action)
+}
+
+fun Project.configAndroidLibrary(action: LibraryExtension.() -> Unit) {
+    val isLibrary: Boolean = pluginManager.hasPlugin("com.android.library")
+    if (!isLibrary) return
+    extensions.getByType<LibraryExtension>().apply(action)
+}

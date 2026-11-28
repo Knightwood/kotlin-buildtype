@@ -1,14 +1,15 @@
 [versions]
+bom="2026.11.01"
 androidTools = "31.4.0"
 android-minSdk = "26"
 android-targetSdk = "34"
 android-compileSdk = "36"
-agp = "8.10.0"
+agp = "9.1.0"
 androidx_core = "1.17.0"
 appcompat = "1.7.0"
 fragment-ktx = "1.8.9"
 activity-ktx = "1.11.0"
-kotlin = "2.2.10"
+kotlin = "2.4.20"
 coroutines = "1.10.1"
 
 logback = "1.5.20"

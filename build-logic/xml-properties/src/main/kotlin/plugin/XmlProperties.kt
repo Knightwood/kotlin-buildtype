@@ -349,20 +349,6 @@ class AppPropertiesPlugin : Plugin<Project> {
     }
 }
 
-/**
- * 判断是library module还是app module
- */
-fun Project.parseLibraryOrApp2GetExtension(block: CommonExtension<*, *, *, *, *, *>.(isLibrary: Boolean) -> Unit) {
-    val isLibrary: Boolean = pluginManager.hasPlugin("com.android.library")
-    val extension = if (isLibrary) {
-        extensions.getByType<LibraryExtension>()
-    } else {
-        extensions.getByType<ApplicationExtension>()
-    }
-    extension.block(isLibrary)
-}
-
-
 private fun firstTest(target: Project) {
     val outputDir: File =
         target.layout.buildDirectory.dir("generated/source/kotlin").get().asFile
@@ -374,7 +360,7 @@ private fun firstTest(target: Project) {
         val props = target.property("xmlConfigs") as AppProperties
         if (props.enabled) {
             println("afterEvaluate-准备生成代码：$props")
-            target.parseLibraryOrApp2GetExtension { isLibrary ->
+            target.configAndroidApplication {
                 //解析当前module信息
                 println(target.displayName + "··" + target.name + "··" + target.getBaseName())
 

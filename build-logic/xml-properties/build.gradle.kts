@@ -24,7 +24,7 @@ plugins {
 }
 
 group = "com.github.knightwood.gradle.plugin"
-val versionName = "0.0.2"
+val versionName = "0.1.0"
 version = versionName
 
 

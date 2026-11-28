@@ -19,10 +19,12 @@ package plugin
 
 import com.android.build.api.dsl.LibraryExtension
 import com.kiylx.common.dependences.AndroidBuildCode
+import org.gradle.api.Action
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 
 class AndroidLibraryConventionPlugin : Plugin<Project> {
@@ -30,7 +32,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             with(pluginManager) {
                 apply("com.android.library")
-                apply("org.jetbrains.kotlin.android")
                 apply("kotlin-parcelize")
             }
             extensions.configure<LibraryExtension> {
@@ -72,11 +73,17 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                     viewBinding =true
                     buildConfig =true
                 }
-                kotlinOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                kotlin {
+                    jvmToolchain(17)
+                    compilerOptions {
+                        jvmTarget.set(JvmTarget.JVM_17)
+                        freeCompilerArgs.add("-Xcontext-receivers")
+                    }
                 }
             }
         }
     }
 }
+private fun org.gradle.api.Project.`kotlin`(configure: Action<org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension>): Unit =
+    (this as org.gradle.api.plugins.ExtensionAware).extensions.configure("kotlin", configure)
 

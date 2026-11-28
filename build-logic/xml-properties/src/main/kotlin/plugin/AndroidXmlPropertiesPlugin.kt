@@ -60,8 +60,7 @@ class AndroidXmlPropertiesPlugin : Plugin<Project> {
             AppPropertiesImpl::class.java,
         )
 
-        val isLibrary: Boolean = target.pluginManager.hasPlugin("com.android.library")
-        if (!isLibrary) {
+        if (!target.isAndroidLibrary) {
             // Registers a callback on the application of the Android Application plugin.
             // This allows the CustomPlugin to work whether it's applied before or after
             // the Android Application plugin.
@@ -96,7 +95,7 @@ class AndroidXmlPropertiesPlugin : Plugin<Project> {
      */
     private fun createTask(target: Project, variant: Variant) {
         val codeGenTaskTaskProvider =
-            target.tasks.register<CodeGenTask>("generateKtCodeFromXml_${variant.name.capitalized()}") {
+            target.tasks.register<CodeGenTask>("generateKtCodeFromXml_${variant.name}") {
                 val androidXmlProps = target.property("androidXmlProps") as AppProperties
 //                println("flavor:${variant.flavorName} -- buildType:${variant.buildType}")
 
@@ -141,7 +140,7 @@ abstract class CodeGenTask : DefaultTask() {
 
     @get:Input
     @get:Optional
-    abstract val flavorName: Property<String?>
+    abstract val flavorName: Property<String>
 
     @get:Input
     abstract val buildTypeName: Property<String>

@@ -86,7 +86,7 @@ internal fun DistributionInfoBuilderExtension.mergeTo(target: JvmApplicationDist
 /**
  * 自身已赋值时写入 [target]
  */
-private fun <T> Property<T>.mergeTo(target: Property<T>) {
+private fun <T : Any> Property<T>.mergeTo(target: Property<T>) {
     if (isPresent) target.set(this)
 }
 
